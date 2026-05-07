@@ -5,15 +5,22 @@ from sqlalchemy import create_engine
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, SQLDatabase, Settings
 from llama_index.core.query_engine import NLSQLTableQueryEngine
 from llama_index.core.tools import QueryEngineTool, ToolMetadata
-from llama_index.core.agent import ReActAgent
+from llama_index.agent.openai import OpenAIAgent
 from llama_index.llms.openai import OpenAI
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 # Load environment variables
 load_dotenv()
 
 # Initialize LLM
-llm = OpenAI(model="gpt-4-turbo")
+llm = OpenAI(
+    model="gpt-4o-mini",
+    additional_kwargs={"store": True}
+)
 Settings.llm = llm
+
+
+Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
 
 def create_logistics_agent():
     """Initializes and returns the ReAct Agent with SQL and RAG tools."""
@@ -61,10 +68,12 @@ def create_logistics_agent():
     )
 
     # 3. Create and return the Agent
-    agent = ReActAgent.from_tools(
-        [rag_tool, sql_tool],
+    print("Создание Агента (Worker + Runner)...")
+
+    agent = OpenAIAgent.from_tools(
+        tools=[rag_tool, sql_tool],
         llm=llm,
-        verbose=True # Set to False in production
+        verbose=True
     )
     
     return agent
