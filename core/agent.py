@@ -68,8 +68,6 @@ def create_logistics_agent():
     )
 
     # 3. Create and return the Agent
-    print("Создание Агента (Worker + Runner)...")
-
     agent = OpenAIAgent.from_tools(
         tools=[rag_tool, sql_tool],
         llm=llm,

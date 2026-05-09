@@ -34,6 +34,18 @@ def ask_agent(user_query: UserQuery):
     
     except Exception as e:
         return {"error": str(e)}
+    
+@app.post("/clear_memory")
+def clear_memory():
+    """
+    Endpoint to reset the agent's conversational memory.
+    Useful when starting a new chat session from the frontend.
+    """
+    try:
+        logistics_agent.memory.reset()
+        return {"status": "Memory cleared successfully"}
+    except Exception as e:
+        return {"error": str(e)}
 
 # To run this server, you would type in the terminal:
 # uvicorn main:app --reload
