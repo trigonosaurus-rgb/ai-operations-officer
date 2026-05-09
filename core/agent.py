@@ -1,4 +1,6 @@
 import os
+from datetime import datetime
+from llama_index.core.tools import FunctionTool
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
@@ -67,15 +69,21 @@ def create_logistics_agent():
         ),
     )
 
+
+    def get_current_date() -> str:
+        """Returns the current real-world date and time. Use this to validate dates and resolve relative time like 'tomorrow'."""
+        return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    calendar_tool = FunctionTool.from_defaults(fn=get_current_date)
+
     # 3. Create and return the Agent
     agent = OpenAIAgent.from_tools(
-        tools=[rag_tool, sql_tool],
+        tools=[rag_tool, sql_tool, calendar_tool],
         llm=llm,
         system_prompt=(
-            "You are a strict and professional logistics assistant. "
-            "Before processing any requests involving dates or times, you MUST validate that the date actually exists on the calendar. "
-            "If a user inputs a non-existent date (e.g., February 30th, February 34th), immediately point out the error and politely ask for a valid date. "
-            "Never confirm an order or schedule for an invalid date."
+            "You are a strict logistics assistant. "
+            "1. ALWAYS validate user dates against the calendar tool. Reject non-existent dates. "
+            "2. If the SQL database returns an empty result for a specific date, you MUST explicitly state that there are no scheduled operations or flights for that date. Do not invent availability."
         ),
         verbose=True
     )
