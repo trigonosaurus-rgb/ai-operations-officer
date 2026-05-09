@@ -23,15 +23,33 @@ def read_root():
 
 @app.post("/ask_agent")
 def ask_agent(user_query: UserQuery):
-    """
-    Endpoint to interact with the AI Agent.
-    Takes a JSON body with the 'query' and returns the agent's answer.
-    """
     try:
-        # Pass the user query to our agent layer
         response = logistics_agent.chat(user_query.query)
-        return {"answer": str(response)}
-    
+        
+        # 1. Extract and format sources
+        sources = []
+        
+        # Check for RAG source nodes (PDF files)
+        if hasattr(response, 'source_nodes'):
+            for node in response.source_nodes:
+                file_name = node.metadata.get("file_name", "Unknown Document")
+                page = node.metadata.get("page_label", "N/A")
+                source_str = f"📄 {file_name} (Page {page})"
+                if source_str not in sources:
+                    sources.append(source_str)
+        
+        # Check for specific Tool usage (SQL or Calendar)
+        for source in response.sources:
+            if source.tool_name == "operational_database":
+                sources.append("🗄️ SQL Database (Operational Data)")
+            elif source.tool_name == "get_current_date":
+                sources.append("📅 System Calendar")
+
+        return {
+            "answer": str(response),
+            "sources": sources
+        }
+
     except Exception as e:
         return {"error": str(e)}
     

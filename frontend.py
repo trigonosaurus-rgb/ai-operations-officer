@@ -43,17 +43,26 @@ if prompt := st.chat_input("Ask a question (e.g., 'What is the cost for a 5000 l
     with st.chat_message("assistant"):
         with st.spinner("Agent is searching databases and documents..."):
             try:
-                # Send POST request to our local server
                 response = requests.post(
                     "http://127.0.0.1:8000/ask_agent",
                     json={"query": prompt}
                 )
                 
                 if response.status_code == 200:
-                    # Extract and display the answer
-                    answer = response.json().get("answer", "Error: No answer received.")
+                    data = response.json()
+                    answer = data.get("answer", "Error: No answer received.")
+                    sources = data.get("sources", [])
+                    
+                    # Display the main answer
                     st.markdown(answer)
-                    # Save the agent's response to the chat history
+                    
+                    # Display sources if available
+                    if sources:
+                        st.markdown("---") # Thin separator line
+                        st.caption("Sources used for this answer:")
+                        for s in sources:
+                            st.caption(s)
+                            
                     st.session_state.messages.append({"role": "assistant", "content": answer})
                 else:
                     st.error(f"Server Error {response.status_code}: {response.text}")
