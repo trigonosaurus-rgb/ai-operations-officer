@@ -21,14 +21,14 @@ The agent can simultaneously check warehouse schedules in an SQL database and ve
 * Autonomous Routing: Automatically decides whether to query the SQL database or the RAG knowledge base.
 * Conversational Memory: Remembers context throughout the session.
 * Local Processing: Uses local embedding models to reduce API costs and improve privacy.
-* **Source Traceability & Citations:** Transparently displays the exact origin of the information (e.g., specific PDF pages or SQL database execution) below every response to ensure auditability and trust.
+* Source Traceability & Citations: Transparently displays the exact origin of the information (e.g., specific PDF pages or SQL database execution) below every response to ensure auditability and trust.
 * Swagger Documentation: Fully documented API endpoints at /docs.
 
 ## Installation and Setup
 
 1.  Clone the repository:
     ```bash
-    git clone [https://github.com/trigonosaurus-rgb/ai-operations-officer.git](https://github.com/trigonosaurus-rgb/ai-operations-officer.git)
+    git clone https://github.com/trigonosaurus-rgb/ai-operations-officer.git
     cd ai-operations-officer
     ```
 
