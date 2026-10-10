@@ -1,0 +1,61 @@
+## 1. Purpose
+
+This Service Level Agreement ("SLA") defines the service levels {{ f.company.name }} ("HPL") commits to for its warehousing and transportation customers, how performance is measured, and the service credits available when HPL misses a target. It forms part of each customer's master services agreement.
+
+## 2. Definitions
+
+- **Promised date** - the delivery date communicated to the customer when the shipment is booked: ship date plus the standard transit time for the destination zone.
+- **On-time delivery** - a shipment delivered on or before its promised date.
+- **On-time delivery rate** - on-time shipments divided by all delivered shipments in the measurement period, excluding the shipments listed in Section 5.
+- **Order accuracy** - orders shipped with the correct items and quantities, divided by all orders shipped.
+- **Dock-to-stock time** - time from inbound check-in until goods are available for picking.
+- **Measurement period** - one {{ f.sla.measurement }}.
+
+## 3. Service Levels
+
+| Metric | Target |
+|---|---|
+| On-time delivery rate | at least {{ f.sla.on_time_target_pct }}% |
+| Order accuracy | at least {{ f.sla.order_accuracy_target_pct }}% |
+| Dock-to-stock time | within {{ f.sla.dock_to_stock_hours }} hours |
+| Inquiry first response | by customer tier (Section 6) |
+
+## 4. Service Credits
+
+4.1 If HPL's on-time delivery rate for a customer falls below target in a measurement period, the customer is entitled to a service credit calculated on that period's total freight charges for the customer:
+
+| On-time delivery rate in the period | Service credit |
+|---|---|
+| {{ f.sla.credit_tier_2.below_pct }}% up to (but not including) {{ f.sla.credit_tier_1.below_pct }}% | {{ f.sla.credit_tier_1.credit_pct }}% of the period's freight charges |
+| below {{ f.sla.credit_tier_2.below_pct }}% | {{ f.sla.credit_tier_2.credit_pct }}% of the period's freight charges |
+
+4.2 Credits do not stack: the single applicable tier is applied. The maximum credit in any period is {{ f.sla.credit_tier_2.credit_pct }}% of freight charges.
+
+4.3 Customers must request a credit in writing within 60 days after the end of the measurement period. Credits are applied to the next invoice and are the customer's sole remedy for missed service levels.
+
+## 5. Exclusions
+
+The following shipments are excluded from the on-time delivery calculation:
+
+5.1 **Force majeure.** Shipments delayed by events outside HPL's and its carriers' reasonable control - including severe weather, road closures, natural disasters and government actions - provided the event is documented on the shipment record (for example as a weather hold noting the affected route).
+
+5.2 **Customer-caused delays.** Late order release (after the same-day cut-off of {{ f.dock_rules.same_day_cutoff }}), incorrect or incomplete delivery addresses, consignee not available, or delivery appointments requested by the customer for a date later than the promised date.
+
+5.3 **Shipments not yet delivered** at the end of the period are measured in the period in which they are delivered.
+
+## 6. Customer Tiers and Support
+
+| Tier | Support model | First response |
+|---|---|---|
+{% for name, t in f.customer_tiers.items() %}| {{ name }} | {{ t.support }} | within {{ t.response_hours }} business hour{% if t.response_hours > 1 %}s{% endif %} |
+{% endfor %}
+
+## 7. Reporting
+
+7.1 HPL provides each customer with a monthly performance scorecard by the 5th business day of the following month, showing every metric in Section 3, the shipments excluded under Section 5 and any credit due.
+
+7.2 Customers may request shipment-level detail for any metric. Disputes about the scorecard must be raised within 30 days of its delivery.
+
+## 8. Review
+
+HPL and the customer review service levels and targets at least once a year, or earlier if the customer's volume or service profile changes significantly.

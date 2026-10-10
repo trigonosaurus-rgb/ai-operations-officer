@@ -1,0 +1,93 @@
+## 1. Purpose and Scope
+
+This policy sets the minimum requirements for accepting, storing, handling and shipping hazardous materials ("hazmat") through {{ f.company.name }} facilities and carriers. It applies to HPL staff, customers tendering hazmat to HPL, and every carrier transporting hazmat on HPL's behalf. It supplements, and does not replace, applicable U.S. Department of Transportation hazardous materials regulations.
+
+## 2. Accepted and Prohibited Hazard Classes
+
+2.1 HPL accepts the following hazard classes, subject to the rest of this policy:
+
+| Class | Description |
+|---|---|
+{% for c in f.hazmat.accepted_classes %}| {{ c.class }} | {{ c.name }} |
+{% endfor %}
+
+2.2 HPL does **not** accept the following classes at any facility or on any HPL-arranged shipment:
+
+| Class | Description |
+|---|---|
+{% for c in f.hazmat.prohibited_classes %}| {{ c.class }} | {{ c.name }} |
+{% endfor %}
+
+2.3 Any hazard class not listed in Section 2.1 requires written approval from HPL Environment, Health & Safety (EHS) before it is booked.
+
+## 3. Lithium Batteries
+
+3.1 Lithium batteries are Class 9 dangerous goods. HPL recognizes the following UN numbers: {{ f.hazmat.lithium_un_numbers | join(", ") }}.
+
+- UN3480 - lithium ion batteries shipped on their own.
+- UN3481 - lithium ion batteries packed with or contained in equipment (for example laptops or headsets).
+- UN3090 / UN3091 - lithium metal batteries, alone or with/in equipment.
+
+3.2 Lithium battery shipments are treated as hazmat for carrier selection, dock booking and storage, including UN3481 batteries installed in equipment.
+
+3.3 Packages must carry the Class 9 lithium battery hazard label or lithium battery mark, as applicable.
+
+3.4 Damaged, defective or recalled lithium batteries are not accepted.
+
+## 4. Carrier Requirements
+
+4.1 Hazmat may be tendered **only** to carriers flagged as hazmat-certified in the HPL Carrier Registry. As of the effective date of this policy the hazmat-certified carriers are:
+{% for c in f.carriers if c.hazmat_certified %}
+- {{ c.name }} ({{ c.code }}){% endfor %}
+
+4.2 The following contracted carriers are **not** hazmat-certified and must never be tendered hazmat, including lithium batteries in equipment:
+{% for c in f.carriers if not c.hazmat_certified %}
+- {{ c.name }} ({{ c.code }}){% endfor %}
+
+4.3 Hazmat-certified carriers must carry at least {{ f.carrier_terms.hazmat_auto_liability_min_usd | usd0 }} auto liability insurance (HPL-LEG-001, Section 4.2).
+
+## 5. Booking and Documentation
+
+5.1 The customer must submit a Safety Data Sheet (SDS) for every hazmat SKU at least {{ f.hazmat.sds_required_hours_before }} hours before the first shipment or receipt.
+
+5.2 Dock appointments for hazmat loads must be booked at least {{ f.dock_rules.hazmat_booking_lead_hours }} hours in advance and only at a designated hazmat dock:
+{% for w in f.warehouses %}
+- {{ w.code }}: {% if w.hazmat_docks %}dock{% if w.hazmat_docks|length > 1 %}s{% endif %} {{ w.hazmat_docks | join(" and ") }}{% else %}hazmat not accepted{% endif %}{% endfor %}
+
+5.3 Every hazmat shipment must have shipping papers listing the UN number, proper shipping name, hazard class, packing group and quantity, plus 24-hour emergency response information.
+
+5.4 A hazmat handling fee of {{ f.surcharges.hazmat_fee_usd | usd }} per shipment applies (HPL-LEG-001, Section 5.4).
+
+## 6. Loading and Segregation
+
+6.1 No more than {{ f.hazmat.max_hazmat_pallets_per_trailer }} hazmat pallets may be loaded on a single trailer.
+
+6.2 Class 8 corrosives must not be loaded directly adjacent to Class 3 flammable liquids; separate them with non-hazmat freight or a load bar.
+
+6.3 Hazmat pallets are loaded toward the rear of the trailer where possible, to allow quick access by emergency responders.
+
+6.4 Placards are required when the aggregate gross weight of hazmat on a vehicle is 1,001 lb or more, and for any quantity where regulations require it.
+
+## 7. Storage
+
+7.1 Hazmat SKUs may only be stored at facilities with hazmat docks, in the designated hazmat storage area.
+
+7.2 Flammable liquids (Class 3) are stored in fire-rated cabinets or a sprinklered flammable storage room.
+
+7.3 Lithium battery stock is stored away from heat sources and separated from flammable liquids.
+
+## 8. Incident Response
+
+8.1 Any spill, leak or damaged hazmat package must be isolated immediately and reported to the facility supervisor.
+
+8.2 The facility supervisor notifies HPL EHS within 1 hour of any hazmat incident, and the customer the same business day.
+
+8.3 Only EHS-trained staff may clean up a spill, using the spill kit located at each hazmat dock.
+
+## 9. Compliance and Violations
+
+9.1 Tendering hazmat to a carrier that is not hazmat-certified is a **critical violation**. The shipment must be reported to EHS as soon as it is discovered, the customer informed, and the carrier relationship reviewed under HPL-LEG-001, Section 7.3.
+
+9.2 EHS audits hazmat shipment records monthly, checking the carrier's certification, the dock used and the documentation for every hazmat shipment.
+
+9.3 Staff who knowingly bypass this policy are subject to disciplinary action.

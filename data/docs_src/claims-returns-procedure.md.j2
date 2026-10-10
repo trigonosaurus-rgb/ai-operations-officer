@@ -1,0 +1,55 @@
+## 1. Purpose
+
+This procedure explains how customers and HPL staff report loss, damage and shortages, how freight claims are filed and resolved, and how customer returns are authorized and processed.
+
+## 2. Reporting Damage and Shortages at Delivery
+
+2.1 **Visible damage.** Damage or shortage that is visible at delivery must be {{ f.claims.visible_damage }}. Describe the damage specifically (for example "2 cartons crushed, contents exposed") - a note such as "subject to inspection" is not sufficient.
+
+2.2 **Concealed damage.** Damage discovered after delivery, when packaging showed no outside damage, must be reported to {{ f.company.claims_email }} within {{ f.claims.concealed_damage_days }} business days of delivery. Keep all packaging and the damaged goods for inspection.
+
+2.3 **Photos.** Take photos of the packaging, the labels and the damaged goods before moving or discarding anything.
+
+## 3. Filing a Claim
+
+3.1 **Deadline.** A written claim must be filed within {{ f.claims.filing_deadline_months }} months of the delivery date, or of the scheduled delivery date for freight that was never delivered.
+
+3.2 **Required documents.**
+
+- Claim form with the HPL shipment ID (SH-NNNNN) and claimed amount
+- Copy of the BOL and the signed delivery receipt showing the exception
+- Commercial invoice or other proof of the value of the goods
+- Photos (Section 2.3) and, for concealed damage, the inspection report
+- Repair estimate, if the goods can be repaired
+
+3.3 **Amount.** The claim amount is the invoice value of the lost or damaged goods, subject to the liability limit in Section 4.
+
+## 4. Liability Limits
+
+4.1 Carrier liability is limited to {{ f.claims.liability_usd_per_lb | usd }} per pound of lost or damaged freight unless a higher value was declared on the BOL and accepted by the carrier before shipment (HPL-LEG-001, Section 8.2).
+
+4.2 **Example.** A 400 lb pallet of goods invoiced at $3,000 is destroyed. Without declared value, the maximum recovery is 400 lb x {{ f.claims.liability_usd_per_lb | usd }} = {{ (400 * f.claims.liability_usd_per_lb) | usd }}.
+
+4.3 HPL is not liable for delays caused by force majeure events (see HPL-COM-003, Section 5.1) or for loss of profit or other indirect damages.
+
+## 5. Claim Handling
+
+5.1 HPL acknowledges every claim within {{ f.claims.acknowledge_days }} business days of receipt.
+
+5.2 HPL aims to resolve claims within {{ f.claims.resolve_days }} days of receiving a complete claim package. Complex claims involving inspection or salvage may take longer; the customer is updated at least every 15 days.
+
+5.3 When a shipment has a reported damage exception, the shipment record is marked as an exception and the claim reference is added to it.
+
+5.4 Approved claims are paid by credit to the customer's next invoice or by bank transfer, at the customer's choice.
+
+## 6. Customer Returns
+
+6.1 **Authorization.** {% if f.returns.rma_required %}A Return Merchandise Authorization (RMA) number is required for every return. Requests go to {{ f.company.ops_email }}.{% endif %} Freight arriving without an RMA number is refused.
+
+6.2 **Return window.** Returns must be requested within {{ f.returns.window_days }} days of the original delivery date.
+
+6.3 **Restocking fee.** Undamaged returns that are not caused by an HPL error are subject to a restocking fee of {{ f.returns.restocking_fee_pct }}% of the goods' value. No restocking fee applies when HPL shipped the wrong item or the goods were damaged in transit.
+
+6.4 **Hazmat returns.** Hazardous materials, including lithium batteries, may only be returned to a facility with hazmat docks and with a hazmat-certified carrier, following HPL-EHS-004. Damaged lithium batteries cannot be returned through HPL.
+
+6.5 **Inspection.** Returned goods are inspected within 2 business days of receipt and either restocked, held for the customer's decision, or disposed of on the customer's written instruction.
