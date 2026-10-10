@@ -30,4 +30,12 @@ hooks/use-chat.ts         network + persistence around the chat reducer
 lib/chat/state.ts         pure reducer: agent events → UI state
 lib/api/chat-stream.ts    POST + SSE parsing → typed AgentEvent stream
 lib/api/server.ts         backend reads for Server Components (server-only)
+app/healthz/route.ts      liveness probe for the container healthcheck
 ```
+
+## Docker
+
+`output: "standalone"` makes `next build` emit a self-contained `server.js` with only the
+files it needs; the [Dockerfile](Dockerfile) copies just that into a slim Node image.
+Because `/api/*` rewrites are fixed at build time, `BACKEND_URL` is a **build arg**
+(set in the root `docker-compose.yml`).

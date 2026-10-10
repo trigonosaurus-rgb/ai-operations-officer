@@ -1,0 +1,31 @@
+# Full stack locally:  docker compose up --build   →  http://localhost:3000
+# API docs (Swagger):  http://localhost:8000/docs
+name: ops-officer
+
+services:
+  backend:
+    build:
+      context: .                     # needs both backend/ and data/
+      dockerfile: backend/Dockerfile
+    env_file:
+      # OPENAI_API_KEY and any overrides from backend/app/config.py.
+      # Without it the stack still starts: data and documents are browsable, chat is off.
+      - path: .env
+        required: false
+    ports:
+      - "127.0.0.1:8000:8000"        # published to this machine only, for /docs
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: frontend
+      args:
+        BACKEND_URL: http://backend:8000   # baked into the /api/* proxy at build time
+    environment:
+      BACKEND_URL: http://backend:8000     # read by Server Components at runtime
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy   # UI starts once the agent is loaded and data seeded
+    restart: unless-stopped

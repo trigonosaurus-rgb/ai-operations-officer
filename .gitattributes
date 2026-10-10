@@ -1,0 +1,16 @@
+# Normalize text files to LF in the repo and in every checkout, whatever the OS
+# (Windows core.autocrlf would otherwise hand CRLF files to the Linux Docker build).
+* text=auto eol=lf
+
+# Binary: never touch line endings, never diff as text.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
+
+# Generated files: collapse them in GitHub diffs and language stats.
+backend/uv.lock linguist-generated
+frontend/package-lock.json linguist-generated
+frontend/lib/api/schema.d.ts linguist-generated
+frontend/lib/api/openapi.json linguist-generated

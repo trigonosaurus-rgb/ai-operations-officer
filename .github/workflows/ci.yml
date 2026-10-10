@@ -79,3 +79,31 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+  docker:
+    name: Docker · build + smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build images
+        run: docker compose build
+
+      # No .env in CI: the backend starts without an API key (chat disabled), which is
+      # enough to prove the images boot, pass their health checks and talk to each other.
+      - name: Start the stack and wait for health checks
+        run: docker compose up --detach --wait --wait-timeout 120
+
+      - name: Frontend proxies the API to the backend
+        run: |
+          curl --fail --silent --show-error http://localhost:3000/api/health
+          curl --fail --silent --show-error --output /dev/null http://localhost:3000/
+          curl --fail --silent --show-error --output /dev/null http://localhost:3000/data
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop
+        if: always()
+        run: docker compose down
