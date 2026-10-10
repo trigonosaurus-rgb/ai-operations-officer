@@ -31,6 +31,7 @@ class TurnRecorder:
             slug=meta["slug"],
             doc_id=meta["doc_id"],
             title=meta["title"],
+            short_title=meta["short_title"],
             page=meta["page"],
             snippet=hit.node.get_content()[:SNIPPET_CHARS].strip(),
             score=round(hit.score, 4) if hit.score is not None else None,

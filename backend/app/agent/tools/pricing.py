@@ -6,6 +6,7 @@ it extracts the parameters and this tool returns an exact, itemized quote.
 
 from dataclasses import dataclass, field
 
+from app.agent.events import QuoteLine, QuoteTrace
 from app.domain import pricing
 from app.domain.facts import Facts
 
@@ -29,12 +30,12 @@ class QuoteResult:
         ]
         return "Quotes, cheapest first:\n" + "\n".join(lines)
 
-    def to_ui(self) -> dict:
-        return {
-            "params": self.params,
-            "quotes": [q.to_dict() for q in self.quotes],
-            "error": self.error,
-        }
+    def to_ui(self) -> QuoteTrace:
+        return QuoteTrace(
+            params=self.params,
+            quotes=[QuoteLine(**q.to_dict()) for q in self.quotes],
+            error=self.error,
+        )
 
 
 def make_quote_fn(facts: Facts, max_results: int = 5):

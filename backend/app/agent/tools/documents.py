@@ -30,14 +30,14 @@ from llama_index.embeddings.fastembed import FastEmbedEmbedding
 from llama_index.retrievers.bm25 import BM25Retriever
 from pypdf import PdfReader
 
-from app.agent.events import Citation
+from app.agent.events import Citation, SearchTrace
 from app.config import Settings
 
 log = logging.getLogger(__name__)
 
 CHUNK_SIZE = 400
 CHUNK_OVERLAP = 60
-INDEX_VERSION = "1"  # bump when ingestion logic changes to force a rebuild
+INDEX_VERSION = "2"  # bump when ingestion logic changes to force a rebuild
 
 
 @dataclass
@@ -55,8 +55,8 @@ class SearchResult:
         ]
         return "\n\n".join(blocks)
 
-    def to_ui(self) -> dict:
-        return {"query": self.query, "citations": [c.model_dump() for c in self.citations]}
+    def to_ui(self) -> SearchTrace:
+        return SearchTrace(query=self.query, citations=self.citations)
 
 
 def load_manifest(path: Path) -> dict[str, dict]:
@@ -90,12 +90,13 @@ def _load_documents(docs_dir: Path, manifest: dict[str, dict]) -> list[Document]
                         "slug": slug,
                         "doc_id": meta["doc_id"],
                         "title": meta["title"],
+                        "short_title": meta["short_title"],
                         "page": page_no,
                     },
                     # The title helps the embedding ("Hazmat Policy" chunk ≈ hazmat question);
                     # ids and page numbers are just noise for semantic similarity.
-                    excluded_embed_metadata_keys=["slug", "doc_id", "page"],
-                    excluded_llm_metadata_keys=["slug", "doc_id", "page"],
+                    excluded_embed_metadata_keys=["slug", "doc_id", "short_title", "page"],
+                    excluded_llm_metadata_keys=["slug", "doc_id", "short_title", "page"],
                 )
             )
     return documents

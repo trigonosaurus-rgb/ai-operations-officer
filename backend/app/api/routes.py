@@ -2,9 +2,9 @@ from collections.abc import AsyncIterable
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse
-from fastapi.sse import EventSourceResponse, ServerSentEvent
+from fastapi.sse import EventSourceResponse
 
-from app.agent.events import ErrorEvent
+from app.agent.events import AgentEvent, ErrorEvent
 from app.agent.examples import EXAMPLES
 from app.agent.service import TurnResult
 from app.agent.tools.documents import load_manifest
@@ -52,14 +52,15 @@ async def health(request: Request, settings: SettingsDep, documents: DocumentsDe
 )
 async def chat(
     body: ChatRequest, agent: AgentDep, sessions: SessionsDep
-) -> AsyncIterable[ServerSentEvent]:
-    """Streams `tool_call`, `tool_result`, `token`, then `done` (or `error`) events."""
+) -> AsyncIterable[AgentEvent]:
+    """Streams `tool_call`, `tool_result`, `token`, then `done` (or `error`) events.
+
+    Each SSE message's `data` is one JSON `AgentEvent`; dispatch on its `type` field.
+    The return annotation puts the event schemas into OpenAPI (→ TypeScript types).
+    """
     lock = sessions.lock(body.session_id)
     if lock.locked():
-        yield ServerSentEvent(
-            event="error",
-            data=ErrorEvent(code="busy", message="This chat is still answering.").model_dump(),
-        )
+        yield ErrorEvent(code="busy", message="This chat is still answering.")
         return
 
     async with lock:  # one turn at a time per session: no interleaved history writes
@@ -67,7 +68,7 @@ async def chat(
         history = await sessions.load(body.session_id)
         result = TurnResult()
         async for event in agent.stream(history, body.message, result):
-            yield ServerSentEvent(event=event.type, data=event.model_dump())
+            yield event
         if result.ok:
             await sessions.save(body.session_id, result.history)
 

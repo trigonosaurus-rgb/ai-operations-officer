@@ -28,6 +28,7 @@ from app.agent.events import (
     AgentEvent,
     DoneEvent,
     ErrorEvent,
+    TextTrace,
     TokenEvent,
     ToolCallEvent,
     ToolResultEvent,
@@ -155,7 +156,9 @@ class OpsAgent:
                 elif isinstance(ev, ToolCallResult):
                     raw = ev.tool_output.raw_output
                     ok = not ev.tool_output.is_error and not getattr(raw, "error", None)
-                    data = raw.to_ui() if hasattr(raw, "to_ui") else {"output": str(raw)[:2000]}
+                    data = (
+                        raw.to_ui() if hasattr(raw, "to_ui") else TextTrace(output=str(raw)[:2000])
+                    )
                     elapsed = time.perf_counter() - tool_started.pop(
                         ev.tool_id, time.perf_counter()
                     )

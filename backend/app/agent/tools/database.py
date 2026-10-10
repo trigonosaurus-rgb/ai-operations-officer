@@ -17,6 +17,8 @@ from typing import Any
 import sqlglot
 from sqlglot import exp
 
+from app.agent.events import SqlTrace
+
 QUERY_TIMEOUT_S = 3.0
 BLOCKED_FUNCTIONS = {"load_extension", "readfile", "writefile", "edit", "fts3_tokenizer"}
 
@@ -59,15 +61,23 @@ class QueryResult:
         note = f"\n(showing first {len(self.rows)} rows; more exist)" if self.truncated else ""
         return f"{len(self.rows)} row(s):\n{header}\n" + "\n".join(lines) + note
 
-    def to_ui(self) -> dict[str, Any]:
-        return {
-            "sql": self.sql,
-            "columns": self.columns,
-            "rows": self.rows[:20],
-            "row_count": len(self.rows),
-            "truncated": self.truncated,
-            "error": self.error,
-        }
+    def to_ui(self) -> SqlTrace:
+        return SqlTrace(
+            sql=pretty_sql(self.sql),
+            columns=self.columns,
+            rows=self.rows[:20],
+            row_count=len(self.rows),
+            truncated=self.truncated,
+            error=self.error,
+        )
+
+
+def pretty_sql(sql: str) -> str:
+    """Multi-line formatting for the trace UI; falls back to the raw text if unparsable."""
+    try:
+        return sqlglot.transpile(sql, read="sqlite", write="sqlite", pretty=True)[0]
+    except sqlglot.errors.SqlglotError:
+        return sql
 
 
 def validate_sql(sql: str) -> str:
@@ -106,6 +116,7 @@ class OperationalDB:
         result = QueryResult(sql=sql.strip())
         try:
             safe_sql = validate_sql(sql)
+            result.sql = safe_sql  # the normalized statement that actually runs
             with closing(self._connect()) as conn:
                 deadline = time.monotonic() + QUERY_TIMEOUT_S
                 # Called every 10k VM instructions; a truthy return aborts the query.

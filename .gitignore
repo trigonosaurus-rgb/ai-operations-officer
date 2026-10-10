@@ -27,3 +27,4 @@ _archive/
 Thumbs.db
 .vscode/
 .idea/
+.playwright-mcp/

@@ -1,0 +1,1054 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI Operations Officer API",
+    "description": "Logistics operations agent: hybrid RAG over policy documents, guarded Text-to-SQL over operational data, and deterministic pricing tools.",
+    "version": "2.0.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat": {
+      "post": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Ask the agent (Server-Sent Events stream)",
+        "description": "Streams `tool_call`, `tool_result`, `token`, then `done` (or `error`) events.\n\nEach SSE message's `data` is one JSON `AgentEvent`; dispatch on its `type` field.\nThe return annotation puts the event schemas into OpenAPI (\u2192 TypeScript types).",
+        "operationId": "chat_api_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/event-stream": {
+                "itemSchema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "string",
+                      "contentMediaType": "application/json",
+                      "contentSchema": {
+                        "oneOf": [
+                          {
+                            "$ref": "#/components/schemas/ToolCallEvent"
+                          },
+                          {
+                            "$ref": "#/components/schemas/ToolResultEvent"
+                          },
+                          {
+                            "$ref": "#/components/schemas/TokenEvent"
+                          },
+                          {
+                            "$ref": "#/components/schemas/DoneEvent"
+                          },
+                          {
+                            "$ref": "#/components/schemas/ErrorEvent"
+                          }
+                        ],
+                        "discriminator": {
+                          "propertyName": "type",
+                          "mapping": {
+                            "tool_call": "#/components/schemas/ToolCallEvent",
+                            "tool_result": "#/components/schemas/ToolResultEvent",
+                            "token": "#/components/schemas/TokenEvent",
+                            "done": "#/components/schemas/DoneEvent",
+                            "error": "#/components/schemas/ErrorEvent"
+                          }
+                        },
+                        "title": "Streamitem Chat Api Chat Post"
+                      }
+                    },
+                    "event": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "retry": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{session_id}": {
+      "delete": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Delete Session",
+        "operationId": "delete_session_api_sessions__session_id__delete",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/examples": {
+      "get": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Examples",
+        "operationId": "examples_api_examples_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExampleGroup"
+                  },
+                  "type": "array",
+                  "title": "Response Examples Api Examples Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents": {
+      "get": {
+        "tags": [
+          "data"
+        ],
+        "summary": "List Documents",
+        "operationId": "list_documents_api_documents_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentInfo"
+                  },
+                  "type": "array",
+                  "title": "Response List Documents Api Documents Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{slug}.pdf": {
+      "get": {
+        "tags": [
+          "data"
+        ],
+        "summary": "Get Document",
+        "operationId": "get_document_api_documents__slug__pdf_get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data/overview": {
+      "get": {
+        "tags": [
+          "data"
+        ],
+        "summary": "Data Overview",
+        "operationId": "data_overview_api_data_overview_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataOverview"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data/tables/{name}": {
+      "get": {
+        "tags": [
+          "data"
+        ],
+        "summary": "Table Preview",
+        "operationId": "table_preview_api_data_tables__name__get",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablePreview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChatRequest": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 8,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Session Id",
+            "examples": [
+              "3f2b9c1e8a7d4e21"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "message"
+        ],
+        "title": "ChatRequest"
+      },
+      "Citation": {
+        "properties": {
+          "n": {
+            "type": "integer",
+            "title": "N"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "doc_id": {
+            "type": "string",
+            "title": "Doc Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "short_title": {
+            "type": "string",
+            "title": "Short Title"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "snippet": {
+            "type": "string",
+            "title": "Snippet"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "n",
+          "slug",
+          "doc_id",
+          "title",
+          "short_title",
+          "page",
+          "snippet"
+        ],
+        "title": "Citation",
+        "description": "A document passage the agent was given, numbered for inline [n] references."
+      },
+      "DataOverview": {
+        "properties": {
+          "company": {
+            "type": "string",
+            "title": "Company"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of"
+          },
+          "tables": {
+            "items": {
+              "$ref": "#/components/schemas/TableInfo"
+            },
+            "type": "array",
+            "title": "Tables"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company",
+          "data_as_of",
+          "tables"
+        ],
+        "title": "DataOverview"
+      },
+      "DocumentInfo": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "doc_id": {
+            "type": "string",
+            "title": "Doc Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "short_title": {
+            "type": "string",
+            "title": "Short Title"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "effective": {
+            "type": "string",
+            "title": "Effective"
+          },
+          "owner": {
+            "type": "string",
+            "title": "Owner"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "doc_id",
+          "title",
+          "short_title",
+          "version",
+          "effective",
+          "owner",
+          "summary",
+          "url"
+        ],
+        "title": "DocumentInfo"
+      },
+      "DoneEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "done",
+            "title": "Type",
+            "default": "done"
+          },
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "type": "array",
+            "title": "Citations"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "title": "Latency Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "answer",
+          "citations",
+          "usage",
+          "latency_ms"
+        ],
+        "title": "DoneEvent"
+      },
+      "ErrorEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "error",
+            "title": "Type",
+            "default": "error"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorEvent"
+      },
+      "ExampleGroup": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "questions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "questions"
+        ],
+        "title": "ExampleGroup"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of"
+          },
+          "documents": {
+            "type": "integer",
+            "title": "Documents"
+          },
+          "document_chunks": {
+            "type": "integer",
+            "title": "Document Chunks"
+          },
+          "active_sessions": {
+            "type": "integer",
+            "title": "Active Sessions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "model",
+          "data_as_of",
+          "documents",
+          "document_chunks",
+          "active_sessions"
+        ],
+        "title": "HealthResponse"
+      },
+      "QuoteLine": {
+        "properties": {
+          "carrier_code": {
+            "type": "string",
+            "title": "Carrier Code"
+          },
+          "carrier_name": {
+            "type": "string",
+            "title": "Carrier Name"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "zone": {
+            "type": "string",
+            "title": "Zone"
+          },
+          "weight_lb": {
+            "type": "number",
+            "title": "Weight Lb"
+          },
+          "rate_per_lb": {
+            "type": "number",
+            "title": "Rate Per Lb"
+          },
+          "linehaul_usd": {
+            "type": "number",
+            "title": "Linehaul Usd"
+          },
+          "fuel_surcharge_usd": {
+            "type": "number",
+            "title": "Fuel Surcharge Usd"
+          },
+          "hazmat_fee_usd": {
+            "type": "number",
+            "title": "Hazmat Fee Usd"
+          },
+          "accessorials_usd": {
+            "type": "number",
+            "title": "Accessorials Usd"
+          },
+          "total_usd": {
+            "type": "number",
+            "title": "Total Usd"
+          }
+        },
+        "type": "object",
+        "required": [
+          "carrier_code",
+          "carrier_name",
+          "mode",
+          "zone",
+          "weight_lb",
+          "rate_per_lb",
+          "linehaul_usd",
+          "fuel_surcharge_usd",
+          "hazmat_fee_usd",
+          "accessorials_usd",
+          "total_usd"
+        ],
+        "title": "QuoteLine"
+      },
+      "QuoteTrace": {
+        "properties": {
+          "params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Params"
+          },
+          "quotes": {
+            "items": {
+              "$ref": "#/components/schemas/QuoteLine"
+            },
+            "type": "array",
+            "title": "Quotes"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "params",
+          "quotes"
+        ],
+        "title": "QuoteTrace"
+      },
+      "SearchTrace": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "type": "array",
+            "title": "Citations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "citations"
+        ],
+        "title": "SearchTrace"
+      },
+      "SqlTrace": {
+        "properties": {
+          "sql": {
+            "type": "string",
+            "title": "Sql"
+          },
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Columns"
+          },
+          "rows": {
+            "items": {
+              "items": {},
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sql",
+          "columns",
+          "rows",
+          "row_count",
+          "truncated"
+        ],
+        "title": "SqlTrace"
+      },
+      "TableInfo": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          },
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Columns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "row_count",
+          "columns"
+        ],
+        "title": "TableInfo"
+      },
+      "TablePreview": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Columns"
+          },
+          "rows": {
+            "items": {
+              "items": {},
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "columns",
+          "rows",
+          "row_count"
+        ],
+        "title": "TablePreview"
+      },
+      "TextTrace": {
+        "properties": {
+          "output": {
+            "type": "string",
+            "title": "Output"
+          }
+        },
+        "type": "object",
+        "required": [
+          "output"
+        ],
+        "title": "TextTrace",
+        "description": "Fallback for tools without a structured payload (or unknown tool names)."
+      },
+      "TokenEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "token",
+            "title": "Type",
+            "default": "token"
+          },
+          "delta": {
+            "type": "string",
+            "title": "Delta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "delta"
+        ],
+        "title": "TokenEvent"
+      },
+      "ToolCallEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "tool_call",
+            "title": "Type",
+            "default": "tool_call"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "tool": {
+            "type": "string",
+            "title": "Tool"
+          },
+          "args": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Args"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tool",
+          "args"
+        ],
+        "title": "ToolCallEvent"
+      },
+      "ToolResultEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "tool_result",
+            "title": "Type",
+            "default": "tool_result"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "tool": {
+            "type": "string",
+            "title": "Tool"
+          },
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "title": "Duration Ms"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SearchTrace"
+              },
+              {
+                "$ref": "#/components/schemas/SqlTrace"
+              },
+              {
+                "$ref": "#/components/schemas/QuoteTrace"
+              },
+              {
+                "$ref": "#/components/schemas/TextTrace"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tool",
+          "ok",
+          "duration_ms",
+          "data"
+        ],
+        "title": "ToolResultEvent"
+      },
+      "Usage": {
+        "properties": {
+          "prompt_tokens": {
+            "type": "integer",
+            "title": "Prompt Tokens",
+            "default": 0
+          },
+          "completion_tokens": {
+            "type": "integer",
+            "title": "Completion Tokens",
+            "default": 0
+          },
+          "llm_calls": {
+            "type": "integer",
+            "title": "Llm Calls",
+            "default": 0
+          },
+          "cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Usd"
+          }
+        },
+        "type": "object",
+        "title": "Usage"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

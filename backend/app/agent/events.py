@@ -6,7 +6,7 @@ answer, the agent trace and the citations purely from this event sequence:
     tool_call → tool_result → … → token → token → … → done   (or error)
 """
 
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -18,6 +18,7 @@ class Citation(BaseModel):
     slug: str
     doc_id: str
     title: str
+    short_title: str
     page: int
     snippet: str
     score: float | None = None
@@ -28,6 +29,53 @@ class Usage(BaseModel):
     completion_tokens: int = 0
     llm_calls: int = 0
     cost_usd: float | None = None
+
+
+# --- Tool payloads for the trace UI (one shape per tool; the frontend tells them
+# apart by their distinctive fields, e.g. `"sql" in data`) ---
+
+
+class SearchTrace(BaseModel):
+    query: str
+    citations: list[Citation]
+
+
+class SqlTrace(BaseModel):
+    sql: str
+    columns: list[str]
+    rows: list[list[Any]]
+    row_count: int
+    truncated: bool
+    error: str | None = None
+
+
+class QuoteLine(BaseModel):
+    carrier_code: str
+    carrier_name: str
+    mode: str
+    zone: str
+    weight_lb: float
+    rate_per_lb: float
+    linehaul_usd: float
+    fuel_surcharge_usd: float
+    hazmat_fee_usd: float
+    accessorials_usd: float
+    total_usd: float
+
+
+class QuoteTrace(BaseModel):
+    params: dict[str, Any]
+    quotes: list[QuoteLine]
+    error: str | None = None
+
+
+class TextTrace(BaseModel):
+    """Fallback for tools without a structured payload (or unknown tool names)."""
+
+    output: str
+
+
+ToolData = SearchTrace | SqlTrace | QuoteTrace | TextTrace
 
 
 class ToolCallEvent(BaseModel):
@@ -43,8 +91,7 @@ class ToolResultEvent(BaseModel):
     tool: str
     ok: bool
     duration_ms: int
-    # Tool-specific structured payload for the trace UI (SQL + rows, citations, quotes…)
-    data: dict[str, Any] = Field(default_factory=dict)
+    data: ToolData
 
 
 class TokenEvent(BaseModel):
@@ -66,4 +113,8 @@ class ErrorEvent(BaseModel):
     message: str
 
 
-AgentEvent = ToolCallEvent | ToolResultEvent | TokenEvent | DoneEvent | ErrorEvent
+# Discriminated by `type`: pydantic and the generated TypeScript both narrow on it.
+AgentEvent = Annotated[
+    ToolCallEvent | ToolResultEvent | TokenEvent | DoneEvent | ErrorEvent,
+    Field(discriminator="type"),
+]

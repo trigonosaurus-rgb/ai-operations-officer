@@ -36,7 +36,7 @@ async def main(question: str) -> None:
                 print(f"{DIM}→ {ev.tool}({ev.args}){RESET}")
             case ToolResultEvent():
                 status = "ok" if ev.ok else "ERROR"
-                detail = ev.data.get("error") or ""
+                detail = getattr(ev.data, "error", None) or ""
                 print(f"{DIM}← {ev.tool} {status} {ev.duration_ms} ms {detail}{RESET}")
             case TokenEvent():
                 print(ev.delta, end="", flush=True)
