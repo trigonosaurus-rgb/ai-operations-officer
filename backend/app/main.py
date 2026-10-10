@@ -60,7 +60,7 @@ def _error(status: int, code: str, message: str) -> JSONResponse:
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    configure_logging(settings.log_level)
+    configure_logging(settings.log_level, settings.log_format)
 
     app = FastAPI(
         title="AI Operations Officer API",

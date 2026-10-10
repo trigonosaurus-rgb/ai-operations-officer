@@ -4,20 +4,29 @@ Every request gets an ID (from the X-Request-ID header or a new one). It lives i
 ContextVar, so every log line written while handling the request carries it — the
 way to connect "the user saw an error" with "what happened in the logs".
 
+Two output formats (LOG_FORMAT): `text` for humans in a terminal, `json` for log
+collectors (Loki, Datadog, CloudWatch…). In JSON mode the `extra={...}` fields of a log
+call become top-level keys, so you can query e.g. `event="agent_turn" and cost_usd > 0.01`.
+
 The middleware is plain ASGI rather than Starlette's BaseHTTPMiddleware: it wraps the
 whole response lifecycle, including streamed (SSE) bodies, so log lines emitted while
 the agent streams still carry the request ID, and the logged duration covers the stream.
 """
 
+import json
 import logging
 import time
 import uuid
 from contextvars import ContextVar
+from datetime import UTC, datetime
 
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
 log = logging.getLogger("app.http")
+
+# Attributes every LogRecord has; anything else on a record came from `extra=`.
+_STANDARD_ATTRS = set(vars(logging.makeLogRecord({}))) | {"message", "asctime", "request_id"}
 
 
 class RequestIdFilter(logging.Filter):
@@ -26,11 +35,28 @@ class RequestIdFilter(logging.Filter):
         return True
 
 
-def configure_logging(level: str) -> None:
+class JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        entry = {
+            "ts": datetime.fromtimestamp(record.created, UTC).isoformat(timespec="milliseconds"),
+            "level": record.levelname,
+            "logger": record.name,
+            "request_id": getattr(record, "request_id", "-"),
+            "msg": record.getMessage(),
+        }
+        entry.update({k: v for k, v in vars(record).items() if k not in _STANDARD_ATTRS})
+        if record.exc_info:
+            entry["exc"] = self.formatException(record.exc_info)
+        return json.dumps(entry, default=str)
+
+
+def configure_logging(level: str, fmt: str = "text") -> None:
     handler = logging.StreamHandler()
     handler.addFilter(RequestIdFilter())
     handler.setFormatter(
-        logging.Formatter("%(asctime)s %(levelname)-7s [%(request_id)s] %(name)s: %(message)s")
+        JsonFormatter()
+        if fmt == "json"
+        else logging.Formatter("%(asctime)s %(levelname)-7s [%(request_id)s] %(name)s: %(message)s")
     )
     root = logging.getLogger()
     root.handlers[:] = [handler]
@@ -65,11 +91,19 @@ class RequestIdMiddleware:
         try:
             await self.app(scope, receive, send_with_id)
         finally:
+            duration_ms = int((time.perf_counter() - started) * 1000)
             log.info(
                 "%s %s -> %s (%d ms)",
                 scope["method"],
                 scope["path"],
                 status,
-                (time.perf_counter() - started) * 1000,
+                duration_ms,
+                extra={
+                    "event": "http_request",
+                    "method": scope["method"],
+                    "path": scope["path"],
+                    "status": status,
+                    "duration_ms": duration_ms,
+                },
             )
             request_id_var.reset(token)

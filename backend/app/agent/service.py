@@ -84,7 +84,10 @@ class OpsAgent:
             Args:
                 query: A focused natural-language search query, e.g. 'late arrival grace period'.
             """
-            return SearchResult(query, [recorder.cite(hit) for hit in self.documents.search(query)])
+            hits = self.documents.search(query)
+            return SearchResult(
+                query, [recorder.cite(h) for h in hits], [h.node.get_content() for h in hits]
+            )
 
         def query_database(sql: str) -> Any:
             """Run ONE read-only SQLite SELECT query against HPL's operational database
@@ -138,10 +141,13 @@ class OpsAgent:
         recorder = TurnRecorder()
         usage = Usage()
         tool_started: dict[str, float] = {}
+        tools_used: list[str] = []
 
         agent = self._build_agent(recorder)
+        # A copy: the buffer appends this turn's tool calls and raw outputs to the list it is
+        # given, and only the compact transcript (question + answer) may reach the session.
         memory = ChatMemoryBuffer.from_defaults(
-            chat_history=history, token_limit=self.settings.history_token_limit, llm=self.llm
+            chat_history=list(history), token_limit=self.settings.history_token_limit, llm=self.llm
         )
         handler = agent.run(
             user_msg=message, memory=memory, max_iterations=self.settings.agent_max_iterations
@@ -171,6 +177,7 @@ class OpsAgent:
                     )
                 elif isinstance(ev, ToolCall):
                     tool_started[ev.tool_id] = time.perf_counter()
+                    tools_used.append(ev.tool_name)
                     yield ToolCallEvent(id=ev.tool_id, tool=ev.tool_name, args=ev.tool_kwargs)
 
             output = await handler
@@ -182,20 +189,37 @@ class OpsAgent:
                 ChatMessage(role=MessageRole.USER, content=message),
                 ChatMessage(role=MessageRole.ASSISTANT, content=answer),
             ]
+            latency_ms = int((time.perf_counter() - started) * 1000)
+            log.info(
+                "Turn done: tools=%s tokens=%d+%d cost=%s latency=%d ms",
+                ",".join(tools_used) or "-",
+                usage.prompt_tokens,
+                usage.completion_tokens,
+                usage.cost_usd,
+                latency_ms,
+                extra={
+                    "event": "agent_turn",
+                    "tools": tools_used,
+                    "citations": len(recorder.citations),
+                    **usage.model_dump(),
+                    "latency_ms": latency_ms,
+                },
+            )
             yield DoneEvent(
-                answer=answer,
-                citations=recorder.citations,
-                usage=usage,
-                latency_ms=int((time.perf_counter() - started) * 1000),
+                answer=answer, citations=recorder.citations, usage=usage, latency_ms=latency_ms
             )
         except Exception as e:
             code, msg = self._classify_error(e)
-            log.exception("Agent turn failed (%s)", code)
+            log.exception(
+                "Agent turn failed (%s)",
+                code,
+                extra={"event": "agent_turn_failed", "code": code, "tools": tools_used},
+            )
             yield ErrorEvent(code=code, message=msg)
         finally:
             # Client disconnected or we failed mid-run: stop the workflow so it doesn't
             # keep spending tokens in the background.
-            if not handler.done():
+            if not handler.is_done():
                 await handler.cancel_run()
 
     # ---------- helpers ----------

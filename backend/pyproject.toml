@@ -41,6 +41,12 @@ ignore = ["E501"]  # line length is the formatter's job; long prompt strings are
 pythonpath = ["."]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+filterwarnings = [
+    # Raised inside llama-index's own pydantic models, not actionable here.
+    "ignore::pydantic.warnings.PydanticDeprecatedSince20",
+    "ignore::pydantic.warnings.PydanticDeprecatedSince211",
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/build_docs.py" = ["RUF001"]  # intentional typographic characters in the Latin-1 map

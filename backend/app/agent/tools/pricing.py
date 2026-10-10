@@ -56,6 +56,8 @@ def make_quote_fn(facts: Facts, max_results: int = 5):
         Args:
             zone: Destination zone by distance from the origin facility:
                 Z1 under 100 miles, Z2 100-300, Z3 300-600, Z4 over 600.
+                For a city HPL has shipped to, look the zone up instead of estimating:
+                SELECT DISTINCT zone FROM shipments WHERE destination_city = '<city>'.
             weight_lb: Total shipment weight in pounds.
             hazmat: True if the shipment contains hazardous materials (incl. lithium batteries).
             liftgate: True if liftgate service is needed at delivery.

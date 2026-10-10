@@ -42,16 +42,22 @@ INDEX_VERSION = "2"  # bump when ingestion logic changes to force a rebuild
 
 @dataclass
 class SearchResult:
-    """Tool output. `str()` is what the LLM sees; `citations` feed the UI."""
+    """Tool output. `str()` is what the LLM sees; `citations` feed the UI.
+
+    The LLM gets each passage's full text: a citation's `snippet` is a shortened
+    preview for the UI and may cut off exactly the sentence that answers the question.
+    """
 
     query: str
     citations: list[Citation]
+    texts: list[str]  # full passage text, parallel to `citations`
 
     def __str__(self) -> str:
         if not self.citations:
             return "No relevant passages found in the company documents."
         blocks = [
-            f"[{c.n}] {c.title} ({c.doc_id}), page {c.page}:\n{c.snippet}" for c in self.citations
+            f"[{c.n}] {c.title} ({c.doc_id}), page {c.page}:\n{text.strip()}"
+            for c, text in zip(self.citations, self.texts, strict=True)
         ]
         return "\n\n".join(blocks)
 
@@ -114,10 +120,11 @@ def _fingerprint(settings: Settings, manifest: dict[str, dict]) -> str:
 class DocumentIndex:
     def __init__(self, nodes: list[TextNode], index: VectorStoreIndex, top_k: int):
         self.nodes = nodes
-        vector = index.as_retriever(similarity_top_k=top_k)
-        bm25 = BM25Retriever.from_defaults(nodes=nodes, similarity_top_k=top_k)
+        # The single retrievers stay accessible so evals can compare them with the fusion.
+        self.vector = index.as_retriever(similarity_top_k=top_k)
+        self.bm25 = BM25Retriever.from_defaults(nodes=nodes, similarity_top_k=top_k)
         self.retriever = QueryFusionRetriever(
-            [vector, bm25],
+            [self.vector, self.bm25],
             mode=FUSION_MODES.RECIPROCAL_RANK,
             similarity_top_k=top_k,
             num_queries=1,  # no LLM query rewriting: keeps search fast and deterministic

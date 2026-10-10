@@ -1,0 +1,84 @@
+# Labeled queries for the retrieval eval (run: uv run python -m evals.retrieval).
+#
+# A retrieved chunk is relevant when it comes from one of `docs` AND contains `contains`
+# (case/whitespace-insensitive). Labeling by answer-bearing text instead of page numbers
+# keeps the labels valid when chunking changes.
+#
+# Mix on purpose: paraphrases (where vector search should shine) and exact tokens/ids
+# (where BM25 should shine). Hybrid search has to handle both.
+
+# --- paraphrases: the query shares few words with the passage
+- query: what happens if the truck shows up way after its slot
+  docs: [warehouse-operations-sop]
+  contains: forfeits the appointment
+- query: damage we only noticed after opening the boxes
+  docs: [claims-returns-procedure]
+  contains: concealed damage
+- query: how much can we recover per pound if freight is destroyed
+  docs: [claims-returns-procedure, master-carrier-agreement]
+  contains: per pound
+- query: compensation to the customer when we deliver late too often
+  docs: [customer-sla]
+  contains: service credit
+- query: storms and road closures not counting against our delivery performance
+  docs: [customer-sla, master-carrier-agreement]
+  contains: force majeure
+- query: how to secure the load on a pallet with plastic film
+  docs: [packaging-labeling-guide]
+  contains: five full turns
+- query: which trucking companies may move dangerous goods
+  docs: [hazmat-policy]
+  contains: hazmat-certified carriers are
+- query: can freight be received on the weekend
+  docs: [warehouse-operations-sop]
+  contains: operates on sundays
+- query: how often does each product have to be physically counted
+  docs: [warehouse-operations-sop]
+  contains: at least once every 30 days
+- query: acid and solvents loaded side by side
+  docs: [hazmat-policy]
+  contains: class 8 corrosives
+- query: carrier keeps missing delivery dates month after month
+  docs: [master-carrier-agreement]
+  contains: probation
+- query: order came in late in the afternoon, when does it leave
+  docs: [warehouse-operations-sop]
+  contains: next operating day
+- query: how quickly do we answer our most important customers
+  docs: [customer-sla]
+  contains: dedicated account manager
+- query: what to do if something leaks in the warehouse
+  docs: [hazmat-policy]
+  contains: spill kit
+
+# --- exact terms, codes and numbers: the embedding model tends to blur these
+- query: UN3481
+  docs: [hazmat-policy]
+  contains: contained in equipment
+- query: SSCC-18 GS1-128
+  docs: [packaging-labeling-guide]
+  contains: sscc-18
+- query: RMA number
+  docs: [claims-returns-procedure]
+  contains: return merchandise authorization
+- query: restocking fee
+  docs: [claims-returns-procedure]
+  contains: restocking fee of 15%
+- query: fuel surcharge percentage
+  docs: [master-carrier-agreement]
+  contains: fuel surcharge of 18.5%
+- query: tender response 60 minutes
+  docs: [master-carrier-agreement]
+  contains: accept or reject each tender
+- query: max hazmat pallets per trailer
+  docs: [hazmat-policy]
+  contains: hazmat pallets may be loaded
+- query: double-wall corrugated
+  docs: [packaging-labeling-guide]
+  contains: double-wall
+- query: dock-to-stock 24 hours
+  docs: [customer-sla, warehouse-operations-sop]
+  contains: dock-to-stock
+- query: invoice dispute 15 days
+  docs: [master-carrier-agreement]
+  contains: dispute an invoice

@@ -64,6 +64,7 @@ class Settings(BaseSettings):
     data_refresh_check_s: int = 600  # reseed check interval (dates are relative)
 
     log_level: str = "INFO"
+    log_format: Literal["text", "json"] = "text"  # json: one object per line, for log collectors
 
     @property
     def docs_dir(self) -> Path:

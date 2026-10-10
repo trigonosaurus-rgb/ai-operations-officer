@@ -33,7 +33,7 @@ dock_slots(id, warehouse_code FK, dock_no, is_hazmat_dock 0/1, slot_date, start_
 shipments(id PK e.g. 'SH-24123', customer_id FK, origin_warehouse FK, destination_city, destination_state, zone, carrier_code FK, mode, weight_lb, pallets, hazmat_class NULL|'3'|'8'|'9', un_number, ship_date, promised_date, delivered_date NULL until delivered, status 'scheduled'|'in_transit'|'delivered'|'delayed'|'exception', exception_note free text e.g. weather holds or damage, freight_cost_usd)
 inventory(id, warehouse_code FK, sku, description, category, customer_id FK, qty_on_hand, qty_reserved, reorder_point, unit_weight_lb, hazmat_class, un_number, last_counted)
 
-Notes: a shipment is on time when delivered_date <= promised_date. Dock slots exist only for days a facility is open (no rows = closed). Use explicit date literals from the system prompt, never date('now')."""
+Notes: a shipment is delivered when delivered_date is set — status 'exception' means delivered with a damage claim, so count it as delivered. It is on time when delivered_date <= promised_date. A SKU needs reordering when qty_on_hand < reorder_point (available to promise = qty_on_hand - qty_reserved). shipments.zone is the pricing zone of each destination_city. Dock slots exist only for days a facility is open (no rows = closed). Use explicit date literals from the system prompt, never date('now')."""
 
 
 class SqlGuardError(ValueError):
@@ -83,7 +83,11 @@ def pretty_sql(sql: str) -> str:
 def validate_sql(sql: str) -> str:
     """Returns the normalized query or raises SqlGuardError."""
     try:
-        statements = [s for s in sqlglot.parse(sql, read="sqlite") if s is not None]
+        # A comment after the final ";" parses as an empty Semicolon statement: harmless,
+        # and only the normalized statement below is ever executed.
+        statements = [
+            s for s in sqlglot.parse(sql, read="sqlite") if s and not isinstance(s, exp.Semicolon)
+        ]
     except sqlglot.errors.ParseError as e:
         raise SqlGuardError(f"could not parse SQL ({e.errors[0]['description']})") from e
     if len(statements) != 1:
