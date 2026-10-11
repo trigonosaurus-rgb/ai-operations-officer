@@ -185,8 +185,8 @@ function PagerLink({ href, disabled, label, children }: { href: string; disabled
 
 function BackendError({ message }: { message: string }) {
   return (
-    <div className="flex gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
-      <AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+    <div className="flex gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
+      <AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
       {message}
     </div>
   );

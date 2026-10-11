@@ -19,7 +19,7 @@ export function SqlBlock({ sql }: { sql: string }) {
     const cls = comment
       ? "text-muted-foreground italic"
       : str
-        ? "text-amber-700 dark:text-amber-300"
+        ? "text-emerald-700 dark:text-emerald-300"
         : num
           ? "text-sky-700 dark:text-sky-300"
           : word && KEYWORDS.has(word.toLowerCase())

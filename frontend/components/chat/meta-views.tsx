@@ -37,8 +37,8 @@ export function BackendNotice({ meta }: { meta: Promise<ChatMeta> }) {
     ? "The agent is disabled: the backend has no OPENAI_API_KEY. Documents and data are still browsable."
     : `${health.error} Start it with: cd backend && uv run uvicorn app.main:app --port 8000`;
   return (
-    <div className="flex gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
-      <AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+    <div className="flex gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
+      <AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
       <span>{message}</span>
     </div>
   );
@@ -129,7 +129,7 @@ export function DataSourcesCard({ meta }: { meta: Promise<ChatMeta> }) {
       </p>
       {health.ok && (
         <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className={`size-1.5 rounded-full ${health.data.status === "ok" ? "bg-emerald-500" : "bg-amber-500"}`} />
+          <span className={`size-1.5 rounded-full ${health.data.status === "ok" ? "bg-emerald-500" : "bg-destructive"}`} />
           {health.data.model}
         </p>
       )}
