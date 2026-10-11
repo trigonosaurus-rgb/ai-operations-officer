@@ -1,0 +1,52 @@
+[project]
+name = "ops-officer-backend"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi[standard]>=0.143.0",
+    "fastembed>=0.9.0",
+    "jinja2>=3.1.6",
+    "limits>=5.8.0",
+    "llama-index-core>=0.14.25",
+    "llama-index-embeddings-fastembed>=0.7.0",
+    "llama-index-llms-openai>=0.8.2",
+    "llama-index-retrievers-bm25>=0.8.0",
+    "pydantic-settings>=2.15.0",
+    "pypdf>=6.20.0",
+    "pyyaml>=6.0.3",
+    "sqlglot>=30.22.0",
+    "tzdata>=2026.5",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.17.0",
+]
+docs = [
+    "fpdf2>=2.8.9",
+    "markdown>=3.11",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]  # line length is the formatter's job; long prompt strings are fine
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+filterwarnings = [
+    # Raised inside llama-index's own pydantic models, not actionable here.
+    "ignore::pydantic.warnings.PydanticDeprecatedSince20",
+    "ignore::pydantic.warnings.PydanticDeprecatedSince211",
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/build_docs.py" = ["RUF001"]  # intentional typographic characters in the Latin-1 map

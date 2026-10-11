@@ -1,0 +1,56 @@
+# Policy document catalogue. Read by scripts/build_docs.py (to render PDFs into
+# data/docs/<slug>.pdf) and by the backend (titles for citations, /api/documents).
+documents:
+  - slug: master-carrier-agreement
+    doc_id: HPL-LEG-001
+    title: Master Carrier Agreement
+    short_title: Carrier Agreement
+    version: "3.2"
+    effective: January 1, 2026
+    owner: Legal & Procurement
+    summary: Terms every contracted carrier signs - qualifications, rates and surcharges, detention, hazmat eligibility, liability, invoicing and performance reviews.
+
+  - slug: warehouse-operations-sop
+    doc_id: HPL-OPS-002
+    title: Warehouse Operations SOP
+    short_title: Warehouse SOP
+    version: "5.0"
+    effective: March 1, 2026
+    owner: Warehouse Operations
+    summary: Facility hours, dock appointment rules, check-in and late arrivals, receiving, outbound cut-offs and inventory control.
+
+  - slug: customer-sla
+    doc_id: HPL-COM-003
+    title: Customer Service Level Agreement
+    short_title: Customer SLA
+    version: "2.4"
+    effective: January 1, 2026
+    owner: Commercial
+    summary: Service level targets (on-time delivery, accuracy, dock-to-stock), how they are measured, exclusions and service credits.
+
+  - slug: hazmat-policy
+    doc_id: HPL-EHS-004
+    title: Hazardous Materials Handling Policy
+    short_title: Hazmat Policy
+    version: "4.1"
+    effective: February 15, 2026
+    owner: Environment, Health & Safety
+    summary: Accepted and prohibited hazard classes, lithium battery rules, carrier certification, booking, segregation and incident response.
+
+  - slug: packaging-labeling-guide
+    doc_id: HPL-OPS-005
+    title: Packaging & Labeling Guide
+    short_title: Packaging Guide
+    version: "1.8"
+    effective: April 1, 2026
+    owner: Warehouse Operations
+    summary: Pallet and parcel specifications, labeling and barcodes, mixed-SKU builds and oversize fees.
+
+  - slug: claims-returns-procedure
+    doc_id: HPL-OPS-006
+    title: Claims & Returns Procedure
+    short_title: Claims & Returns
+    version: "2.0"
+    effective: January 1, 2026
+    owner: Customer Operations
+    summary: How to report damage and shortages, filing deadlines, liability limits, claim handling times and customer returns (RMA).

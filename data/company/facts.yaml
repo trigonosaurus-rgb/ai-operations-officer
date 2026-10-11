@@ -1,0 +1,226 @@
+# Harbor & Pine Logistics — single source of truth.
+#
+# Both the SQLite seed (backend/scripts/seed_db.py) and the policy documents
+# (data/docs_src/*.md.j2 → data/docs/*.pdf) are generated from this file,
+# so numbers in the PDFs and rows in the database can never disagree.
+#
+# ALL DATA IS SYNTHETIC. Harbor & Pine Logistics is a fictional company.
+
+company:
+  name: Harbor & Pine Logistics
+  short_name: HPL
+  legal_name: Harbor & Pine Logistics, LLC
+  hq_address: 1840 W Fulton Market, Chicago, IL 60612
+  timezone: America/Chicago
+  ops_email: ops@harborpine.example
+  claims_email: claims@harborpine.example
+  dispatch_phone: (312) 555-0148
+
+warehouses:
+  - code: CHI1
+    name: Chicago Central DC
+    address: 4100 S Packers Ave, Chicago, IL 60609
+    city: Chicago
+    state: IL
+    dock_count: 12
+    hazmat_docks: [11, 12]
+    open: "06:00"
+    close: "22:00"
+    days: Mon-Sat
+  - code: JOL1
+    name: Joliet Cross-Dock
+    address: 2750 Channahon Rd, Joliet, IL 60436
+    city: Joliet
+    state: IL
+    dock_count: 8
+    hazmat_docks: []
+    open: "05:00"
+    close: "23:00"
+    days: Mon-Sun
+  - code: IND1
+    name: Indianapolis DC
+    address: 6200 W Raymond St, Indianapolis, IN 46241
+    city: Indianapolis
+    state: IN
+    dock_count: 10
+    hazmat_docks: [10]
+    open: "06:00"
+    close: "20:00"
+    days: Mon-Sat
+  - code: MKE1
+    name: Milwaukee Satellite
+    address: 501 W Becher St, Milwaukee, WI 53207
+    city: Milwaukee
+    state: WI
+    dock_count: 4
+    hazmat_docks: []
+    open: "07:00"
+    close: "17:00"
+    days: Mon-Fri
+
+# Destination zones used for pricing. Distance is measured from the origin warehouse.
+zones:
+  - code: Z1
+    name: Local
+    description: under 100 miles
+  - code: Z2
+    name: Regional
+    description: 100 to 300 miles
+  - code: Z3
+    name: Midwest
+    description: 300 to 600 miles
+  - code: Z4
+    name: National
+    description: over 600 miles
+
+# Standard transit time in calendar days, by destination zone.
+transit_days: { Z1: 1, Z2: 2, Z3: 3, Z4: 5 }
+
+# Transport modes and their weight limits (per shipment).
+modes:
+  PARCEL: { min_lb: 0, max_lb: 150 }
+  LTL: { min_lb: 151, max_lb: 10000 }
+  FTL: { min_lb: 5000, max_lb: 44000 }
+
+carriers:
+  - code: PRL
+    name: Prairie Line Trucking
+    modes: [LTL, FTL]
+    zones: [Z1, Z2, Z3, Z4]
+    hazmat_certified: true
+    cargo_insurance_usd: 250000
+    on_time_bias: 0.97 # used only by the seed generator
+  - code: LKX
+    name: Lakeshore Express
+    modes: [LTL]
+    zones: [Z1, Z2, Z3]
+    hazmat_certified: false
+    cargo_insurance_usd: 100000
+    on_time_bias: 0.86
+  - code: BHC
+    name: Blue Heron Carriers
+    modes: [FTL]
+    zones: [Z2, Z3, Z4]
+    hazmat_certified: true
+    cargo_insurance_usd: 500000
+    on_time_bias: 0.95
+  - code: RDP
+    name: Ridgeway Parcel
+    modes: [PARCEL]
+    zones: [Z1, Z2, Z3, Z4]
+    hazmat_certified: false
+    cargo_insurance_usd: 100000
+    on_time_bias: 0.94
+  - code: IWF
+    name: Ironwood Freight
+    modes: [LTL, FTL]
+    zones: [Z1, Z2, Z3]
+    hazmat_certified: true
+    cargo_insurance_usd: 250000
+    on_time_bias: 0.92
+  - code: CSC
+    name: Canal Street Courier
+    modes: [PARCEL, LTL]
+    zones: [Z1]
+    hazmat_certified: false
+    cargo_insurance_usd: 100000
+    on_time_bias: 0.98
+
+# Base rates in USD per lb, by mode and zone. Each carrier's actual rate is the
+# base rate multiplied by its carrier factor (see rate_factors). Minimum charge
+# applies per shipment before surcharges.
+base_rates:
+  PARCEL: { Z1: 0.95, Z2: 1.20, Z3: 1.55, Z4: 1.95, min_charge: 12.00 }
+  LTL: { Z1: 0.14, Z2: 0.19, Z3: 0.26, Z4: 0.34, min_charge: 145.00 }
+  FTL: { Z1: 0.045, Z2: 0.065, Z3: 0.085, Z4: 0.11, min_charge: 650.00 }
+
+rate_factors:
+  PRL: 1.00
+  LKX: 0.92
+  BHC: 1.04
+  RDP: 1.00
+  IWF: 0.96
+  CSC: 1.10
+
+surcharges:
+  fuel_pct: 18.5 # percent of linehaul (base) charge
+  hazmat_fee_usd: 85.00 # flat, per shipment
+  liftgate_fee_usd: 75.00 # flat, per stop
+  residential_fee_usd: 45.00
+  oversize_pallet_fee_usd: 40.00 # per pallet exceeding standard dimensions
+
+dock_rules:
+  slot_minutes: 60
+  booking_lead_hours: 24 # standard freight
+  hazmat_booking_lead_hours: 48
+  late_grace_minutes: 30
+  no_show_fee_usd: 150.00
+  free_time_hours: 2
+  detention_usd_per_hour: 75.00
+  same_day_cutoff: "15:00"
+  max_slots_per_carrier_per_day: 6
+
+pallet_rules:
+  length_in: 48
+  width_in: 40
+  max_height_in: 72
+  max_weight_lb: 2500
+  label_sides: 2
+
+parcel_rules:
+  max_weight_lb: 150
+  max_length_in: 108
+  double_wall_over_lb: 40
+
+hazmat:
+  accepted_classes:
+    - { class: "3", name: Flammable liquids }
+    - { class: "8", name: Corrosives }
+    - { class: "9", name: Miscellaneous dangerous goods (incl. lithium batteries) }
+  prohibited_classes:
+    - { class: "1", name: Explosives }
+    - { class: "2.3", name: Toxic gases }
+    - { class: "6.2", name: Infectious substances }
+    - { class: "7", name: Radioactive material }
+  lithium_un_numbers: [UN3480, UN3481, UN3090, UN3091]
+  sds_required_hours_before: 48
+  max_hazmat_pallets_per_trailer: 8
+
+sla:
+  on_time_target_pct: 95.0
+  order_accuracy_target_pct: 99.5
+  dock_to_stock_hours: 24
+  credit_tier_1: { below_pct: 95.0, credit_pct: 2 }
+  credit_tier_2: { below_pct: 90.0, credit_pct: 5 }
+  measurement: calendar month
+
+claims:
+  visible_damage: noted on the delivery receipt / BOL at time of delivery
+  concealed_damage_days: 5 # business days after delivery
+  filing_deadline_months: 9
+  liability_usd_per_lb: 2.50
+  acknowledge_days: 3
+  resolve_days: 30
+
+carrier_terms:
+  auto_liability_min_usd: 1000000
+  hazmat_auto_liability_min_usd: 5000000
+  cargo_insurance_min_usd: 100000
+  tender_response_minutes: 60
+  exception_report_hours: 2
+  payment_terms_days: 30
+  invoice_dispute_days: 15
+  probation_below_on_time_pct: 90.0
+  probation_consecutive_months: 2
+  suspension_below_on_time_pct: 85.0
+  termination_notice_days: 30
+
+returns:
+  window_days: 30
+  restocking_fee_pct: 15
+  rma_required: true
+
+customer_tiers:
+  Gold: { support: dedicated account manager, response_hours: 2 }
+  Silver: { support: shared account team, response_hours: 8 }
+  Standard: { support: ops desk, response_hours: 24 }

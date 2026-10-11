@@ -1,5 +1,30 @@
+# Secrets
 .env
-venv/
-data/
+.env.*
+!.env.example
+
+# Python
 __pycache__/
-*.sqlite
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Generated at runtime (SQLite DB, vector index, model cache) — rebuilt by scripts
+var/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local-only
+_archive/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.playwright-mcp/

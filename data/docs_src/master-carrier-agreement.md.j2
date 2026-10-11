@@ -1,0 +1,128 @@
+## 1. Parties and Purpose
+
+This Master Carrier Agreement (the "Agreement") is entered into between {{ f.company.legal_name }}, with offices at {{ f.company.hq_address }} ("HPL"), and each motor carrier that has been approved by HPL and accepts this Agreement in writing (the "Carrier").
+
+This Agreement governs every shipment tendered by HPL to the Carrier, whether the shipment originates at an HPL facility or is arranged by HPL on behalf of an HPL customer. Individual shipment terms (pickup location, destination, weight, appointment time) are communicated through the tender and the bill of lading (BOL). Where a tender conflicts with this Agreement, this Agreement prevails.
+
+## 2. Definitions
+
+- **Shipment** - freight moving under a single HPL shipment ID in the format SH-NNNNN and a single BOL.
+- **Mode** - the service level of a shipment: PARCEL (up to {{ f.modes.PARCEL.max_lb }} lb), LTL (less-than-truckload, {{ f.modes.LTL.min_lb }} to {{ "{:,}".format(f.modes.LTL.max_lb) }} lb) or FTL (full truckload, {{ "{:,}".format(f.modes.FTL.min_lb) }} to {{ "{:,}".format(f.modes.FTL.max_lb) }} lb).
+- **Zone** - the destination band used for pricing: {% for z in f.zones %}{{ z.code }} {{ z.name }} ({{ z.description }}){% if not loop.last %}; {% endif %}{% endfor %}.
+- **Linehaul charge** - the transportation charge before surcharges and accessorials.
+- **Accessorial** - any additional service beyond dock-to-dock transportation (for example liftgate or residential delivery).
+- **Hazmat** - hazardous materials as defined in HPL's Hazardous Materials Handling Policy (HPL-EHS-004).
+- **HPL Carrier Registry** - HPL's system of record listing each approved carrier, its modes, zones served and hazmat certification status.
+- **HPL Rate Management System** - HPL's system of record for carrier rate cards (rate per lb by mode and zone).
+
+## 3. Term and Termination
+
+3.1 This Agreement has an initial term of twelve (12) months and renews automatically for successive twelve-month periods.
+
+3.2 Either party may terminate this Agreement for convenience with {{ f.carrier_terms.termination_notice_days }} days' written notice.
+
+3.3 HPL may terminate this Agreement immediately, without notice, if the Carrier (a) loses its operating authority or required insurance, (b) transports hazardous materials without the certification required by Section 7, or (c) is suspended under Section 10.
+
+## 4. Carrier Qualifications and Insurance
+
+4.1 The Carrier must hold valid federal operating authority, maintain a satisfactory safety rating and use only properly licensed drivers.
+
+4.2 The Carrier must maintain, at its own cost, the following minimum insurance:
+
+| Coverage | Minimum |
+|---|---|
+| Auto liability (general freight) | {{ f.carrier_terms.auto_liability_min_usd | usd0 }} per occurrence |
+| Auto liability (hazmat-certified carriers) | {{ f.carrier_terms.hazmat_auto_liability_min_usd | usd0 }} per occurrence |
+| Cargo insurance | {{ f.carrier_terms.cargo_insurance_min_usd | usd0 }} per shipment |
+
+4.3 The Carrier's coverage limits and certifications are recorded in the HPL Carrier Registry. The Carrier must notify HPL within two (2) business days of any change.
+
+## 5. Rates and Charges
+
+5.1 **Linehaul.** The linehaul charge for a shipment equals the shipment weight in pounds multiplied by the Carrier's rate per lb for the applicable mode and zone, as published in the HPL Rate Management System. Rates are reviewed annually.
+
+5.2 **Minimum charges.** If the calculated linehaul is lower than the minimum charge for the mode, the minimum charge applies:
+
+| Mode | Minimum charge per shipment |
+|---|---|
+| PARCEL | {{ f.base_rates.PARCEL.min_charge | usd }} |
+| LTL | {{ f.base_rates.LTL.min_charge | usd }} |
+| FTL | {{ f.base_rates.FTL.min_charge | usd }} |
+
+5.3 **Fuel surcharge.** A fuel surcharge of {{ f.surcharges.fuel_pct }}% of the linehaul charge applies to every shipment. The fuel surcharge is not applied to accessorial charges.
+
+5.4 **Accessorial charges.** The following flat charges apply per shipment where the service is provided:
+
+| Accessorial | Charge |
+|---|---|
+| Hazardous materials handling | {{ f.surcharges.hazmat_fee_usd | usd }} per shipment |
+| Liftgate service | {{ f.surcharges.liftgate_fee_usd | usd }} per stop |
+| Residential delivery | {{ f.surcharges.residential_fee_usd | usd }} per stop |
+| Oversize pallet (exceeds HPL-OPS-005 dimensions) | {{ f.surcharges.oversize_pallet_fee_usd | usd }} per pallet |
+
+5.5 **Total charge.** The total charge for a shipment is: linehaul (or minimum charge) + fuel surcharge + applicable accessorials. No other charges may be invoiced without HPL's prior written approval.
+
+5.6 **Detention.** Each appointment includes {{ f.dock_rules.free_time_hours }} hours of free time for loading or unloading, measured from the scheduled appointment time or the actual check-in time, whichever is later. Detention beyond free time is billed at {{ f.dock_rules.detention_usd_per_hour | usd }} per hour in 15-minute increments, provided the driver checked in within the grace period defined in the Warehouse Operations SOP (HPL-OPS-002).
+
+5.7 **Missed appointments.** If the Carrier misses a dock appointment or arrives after the grace period, HPL may charge a no-show fee of {{ f.dock_rules.no_show_fee_usd | usd }} and the Carrier must rebook.
+
+## 6. Service Standards
+
+6.1 **Tender response.** The Carrier must accept or reject each tender within {{ f.carrier_terms.tender_response_minutes }} minutes.
+
+6.2 **Transit times.** Unless the tender states otherwise, the Carrier must deliver within the following standard transit times, counted in calendar days from the ship date:
+
+| Zone | Standard transit |
+|---|---|
+{% for z in f.zones %}| {{ z.code }} - {{ z.name }} | {{ f.transit_days[z.code] }} day{% if f.transit_days[z.code] > 1 %}s{% endif %} |
+{% endfor %}
+
+The resulting date is the shipment's **promised date**. A shipment is on time if it is delivered on or before its promised date.
+
+6.3 **Exception reporting.** The Carrier must notify HPL dispatch at {{ f.company.dispatch_phone }} within {{ f.carrier_terms.exception_report_hours }} hours of becoming aware of any event likely to delay a shipment (breakdown, accident, weather closure, refused delivery). Weather or road closures must be documented with the affected route and the revised ETA so that HPL can record the event as force majeure.
+
+6.4 **Proof of delivery.** Signed proof of delivery must be available to HPL within 24 hours of delivery.
+
+## 7. Hazardous Materials
+
+7.1 Only carriers flagged as hazmat-certified in the HPL Carrier Registry may be tendered shipments containing hazardous materials. A carrier that is not hazmat-certified must reject any tender that contains hazmat, even if the tender was issued in error.
+
+7.2 Hazmat-certified carriers must comply with HPL's Hazardous Materials Handling Policy (HPL-EHS-004), including placarding, segregation and incident reporting.
+
+7.3 Transporting hazardous materials without certification is a material breach of this Agreement and grounds for immediate termination under Section 3.3.
+
+## 8. Liability and Claims
+
+8.1 The Carrier is liable for loss of or damage to freight from pickup until delivery.
+
+8.2 Unless a higher value is declared on the BOL and accepted by the Carrier, liability is limited to {{ f.claims.liability_usd_per_lb | usd }} per pound of the lost or damaged freight.
+
+8.3 Claims are filed and handled according to HPL's Claims & Returns Procedure (HPL-OPS-006). Claims must be filed within {{ f.claims.filing_deadline_months }} months of delivery (or of the scheduled delivery date, for lost freight). The Carrier must pay undisputed claims within 30 days of receipt.
+
+## 9. Invoicing and Payment
+
+9.1 Each invoice must reference exactly one HPL shipment ID and itemize linehaul, fuel surcharge and accessorials.
+
+9.2 HPL pays correct invoices within {{ f.carrier_terms.payment_terms_days }} days of receipt (net {{ f.carrier_terms.payment_terms_days }}).
+
+9.3 HPL may dispute an invoice within {{ f.carrier_terms.invoice_dispute_days }} days of receipt. Undisputed portions are paid on the normal schedule.
+
+## 10. Performance Review
+
+10.1 HPL publishes a monthly carrier scorecard showing on-time delivery, tender acceptance and claims ratio for each carrier.
+
+10.2 **Probation.** A carrier whose on-time delivery rate is below {{ f.carrier_terms.probation_below_on_time_pct }}% for {{ f.carrier_terms.probation_consecutive_months }} consecutive calendar months is placed on probation. During probation HPL may reduce tender volume and the carrier must submit a written corrective action plan within 10 business days.
+
+10.3 **Suspension.** A carrier whose on-time delivery rate falls below {{ f.carrier_terms.suspension_below_on_time_pct }}% in any calendar month, or that fails to meet its corrective action plan, may be suspended from receiving tenders.
+
+10.4 Shipments delayed by documented force majeure events (Section 6.3) are excluded from the on-time calculation.
+
+## 11. General
+
+11.1 **Confidentiality.** Rates, customer information and shipment data are confidential and may not be disclosed to third parties.
+
+11.2 **Independent contractor.** The Carrier is an independent contractor and controls the manner of performing the services.
+
+11.3 **Governing law.** This Agreement is governed by the laws of the State of Illinois.
+
+11.4 **Notices.** Operational notices go to {{ f.company.ops_email }}; claims notices go to {{ f.company.claims_email }}.

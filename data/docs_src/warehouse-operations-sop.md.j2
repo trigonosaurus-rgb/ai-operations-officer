@@ -1,0 +1,86 @@
+## 1. Scope
+
+This Standard Operating Procedure applies to all inbound and outbound freight handled at {{ f.company.name }} facilities. It is binding on HPL staff, contracted carriers and drivers. All times are local facility time ({{ f.company.timezone }}).
+
+### 1.1 Facilities
+
+| Code | Facility | City | Hours | Days | Docks | Hazmat docks |
+|---|---|---|---|---|---|---|
+{% for w in f.warehouses %}| {{ w.code }} | {{ w.name }} | {{ w.city }}, {{ w.state }} | {{ w.open }}-{{ w.close }} | {{ w.days }} | {{ w.dock_count }} | {% if w.hazmat_docks %}{{ w.hazmat_docks | join(", ") }}{% else %}none{% endif %} |
+{% endfor %}
+
+Facility addresses:
+{% for w in f.warehouses %}
+- {{ w.code }} - {{ w.address }}{% endfor %}
+
+Facilities are closed on days outside their listed operating days. {% for w in f.warehouses if w.days == "Mon-Sun" %}{{ w.name }} ({{ w.code }}){% endfor %} is the only facility that operates on Sundays; freight that must move on a Sunday should be routed through it.
+
+## 2. Dock Appointment Scheduling
+
+2.1 **Appointments are mandatory.** Every truck delivering to or collecting from an HPL facility must hold a confirmed dock appointment in the HPL Dock Scheduler. Trucks without an appointment are worked only if a dock is free and may wait until the end of the day.
+
+2.2 **Slot length.** Appointments are booked in {{ f.dock_rules.slot_minutes }}-minute slots. A slot is available only if its status in the Dock Scheduler is "available"; slots marked "blocked" are out of service (for example for maintenance) and cannot be booked.
+
+2.3 **Lead time.** Standard appointments must be booked at least {{ f.dock_rules.booking_lead_hours }} hours before the slot start time. Appointments for shipments containing hazardous materials must be booked at least {{ f.dock_rules.hazmat_booking_lead_hours }} hours in advance (see HPL-EHS-004).
+
+2.4 **Hazmat docks.** Hazardous materials may only be loaded or unloaded at designated hazmat docks:
+{% for w in f.warehouses %}
+- {{ w.code }} ({{ w.name }}): {% if w.hazmat_docks %}dock{% if w.hazmat_docks|length > 1 %}s{% endif %} {{ w.hazmat_docks | join(" and ") }}{% else %}no hazmat docks - hazardous materials are not accepted at this facility{% endif %}{% endfor %}
+
+2.5 **Carrier limits.** A single carrier may hold at most {{ f.dock_rules.max_slots_per_carrier_per_day }} appointments per facility per day, to keep dock capacity available for all partners.
+
+2.6 **Rescheduling and cancellation.** Appointments may be moved or cancelled free of charge up to 4 hours before the slot start time. Later cancellations are treated as no-shows (Section 3.3).
+
+## 3. Arrival and Check-in
+
+3.1 Drivers should arrive 15 minutes before the appointment and check in at the gatehouse with: the BOL, the HPL shipment ID (SH-NNNNN), a valid driver's license and, for hazmat loads, the Safety Data Sheet (SDS) and emergency response information.
+
+3.2 **Grace period.** A driver who checks in no later than {{ f.dock_rules.late_grace_minutes }} minutes after the appointment start is treated as on time.
+
+3.3 **Late arrival and no-show.** A driver who arrives more than {{ f.dock_rules.late_grace_minutes }} minutes late forfeits the appointment. The carrier must book a new slot in the Dock Scheduler and may be charged a no-show fee of {{ f.dock_rules.no_show_fee_usd | usd }}. The same fee applies when a carrier does not arrive at all or cancels less than 4 hours ahead.
+
+3.4 **Free time and detention.** HPL aims to complete loading or unloading within {{ f.dock_rules.free_time_hours }} hours of check-in. Carriers that checked in within the grace period may bill detention after {{ f.dock_rules.free_time_hours }} hours at {{ f.dock_rules.detention_usd_per_hour | usd }} per hour (see HPL-LEG-001, Section 5.6). Detention is not payable to drivers who arrived late.
+
+## 4. Receiving
+
+4.1 **Inspection.** Receivers check piece count, visible condition and seal number against the BOL before signing. Any shortage, overage or damage (OS&D) must be written on the delivery receipt before the driver leaves; see HPL-OPS-006 for claims.
+
+4.2 **OS&D reporting.** OS&D findings are entered in the warehouse management system within 24 hours of receipt.
+
+4.3 **Dock-to-stock.** Received goods must be put away and available for picking within {{ f.sla.dock_to_stock_hours }} hours of check-in.
+
+4.4 **Rejected freight.** HPL refuses freight that is leaking, has damaged hazmat packaging, or exceeds the pallet limits of HPL-OPS-005 by more than 10%.
+
+## 5. Outbound and Cut-off Times
+
+5.1 **Same-day cut-off.** Orders released to the warehouse before {{ f.dock_rules.same_day_cutoff }} local time ship the same day. Orders released after {{ f.dock_rules.same_day_cutoff }} ship the next operating day of the facility.
+
+5.2 **Carrier selection.** Outbound shipments are tendered to carriers listed in the HPL Carrier Registry that serve the destination zone and mode. Hazmat shipments may only be tendered to hazmat-certified carriers.
+
+5.3 **Load verification.** Before the trailer is sealed, the loader scans every pallet or parcel label and confirms the count against the BOL.
+
+## 6. Inventory Control
+
+6.1 **Available quantity.** The quantity available to promise for a SKU is quantity on hand minus quantity reserved for open orders.
+
+6.2 **Replenishment alerts.** When the quantity on hand of a SKU at a facility falls below its reorder point, the inventory team notifies the owning customer the same business day.
+
+6.3 **Cycle counts.** Every SKU must be counted at least once every 30 days. SKUs whose last count is older than 30 days are flagged for counting in the next shift.
+
+6.4 **Hazmat storage.** Hazmat SKUs may only be stored at facilities with hazmat docks (see Section 2.4).
+
+## 7. Safety
+
+7.1 High-visibility vests and safety footwear are required on the dock floor. Drivers must stay in the designated driver area unless directed by HPL staff.
+
+7.2 Wheel chocks or a vehicle restraint must be engaged before any forklift enters a trailer.
+
+7.3 Damaged or leaking hazmat packages are handled only by EHS-trained staff following HPL-EHS-004.
+
+## 8. Contacts and Escalation
+
+| Need | Contact |
+|---|---|
+| Appointment changes, delays | HPL dispatch, {{ f.company.dispatch_phone }} |
+| Operational questions | {{ f.company.ops_email }} |
+| Damage and claims | {{ f.company.claims_email }} |

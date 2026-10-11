@@ -1,0 +1,56 @@
+## 1. Purpose
+
+Correct packaging protects freight, keeps docks safe and avoids extra charges. This guide sets the packaging and labeling standards for all freight shipped from or received at {{ f.company.name }} facilities. Freight that does not meet these standards may be refused (HPL-OPS-002, Section 4.4) or charged accessorial fees.
+
+## 2. Pallet Standards
+
+2.1 **Footprint.** Use standard {{ f.pallet_rules.length_in }} x {{ f.pallet_rules.width_in }} inch pallets in good condition, without broken boards or protruding nails.
+
+2.2 **Height and weight.** A loaded pallet must not exceed {{ f.pallet_rules.max_height_in }} inches in height (including the pallet) or {{ "{:,}".format(f.pallet_rules.max_weight_lb) }} lb gross weight.
+
+2.3 **Overhang.** Cartons must not overhang the pallet edges.
+
+2.4 **Build.** Stack heavier cartons on the bottom and lighter cartons on top, in an interlocking pattern where possible. Mixed-SKU pallets must keep each SKU together and label the pallet "MIXED".
+
+2.5 **Securing.** Stretch-wrap every pallet with at least five full turns, wrapping around the pallet base to tie the load to the pallet. Use corner boards for loads over 1,000 lb.
+
+2.6 **Oversize pallets.** Pallets exceeding the dimensions in Section 2.1 or 2.2 are charged an oversize pallet fee of {{ f.surcharges.oversize_pallet_fee_usd | usd }} per pallet. Pallets exceeding the limits by more than 10% may be refused.
+
+## 3. Parcel Standards
+
+3.1 **Weight and size.** A single parcel may weigh up to {{ f.parcel_rules.max_weight_lb }} lb and measure up to {{ f.parcel_rules.max_length_in }} inches in length. Heavier or longer items must ship LTL on a pallet.
+
+3.2 **Cartons.** Use new corrugated cartons. Cartons containing more than {{ f.parcel_rules.double_wall_over_lb }} lb must be double-wall corrugated.
+
+3.3 **Void fill.** Fill empty space so contents cannot shift; a sealed carton should not collapse when lightly pressed on top.
+
+3.4 **Sealing.** Seal with pressure-sensitive plastic tape at least 2 inches wide using the H-taping method. Do not use string, masking tape or cellophane tape.
+
+## 4. Labeling
+
+4.1 **Shipping label.** Every parcel and pallet carries a shipping label showing the HPL shipment ID (SH-NNNNN), consignee name and address, number of handling units (for example "1 of 4") and the carrier.
+
+4.2 **Pallet labels.** Pallets carry labels on {{ f.pallet_rules.label_sides }} adjacent sides so they can be scanned from either side of the trailer.
+
+4.3 **Barcodes.** Pallets use an SSCC-18 barcode (GS1-128). Parcels use the carrier's barcode plus the HPL shipment ID in Code 128.
+
+4.4 **Handling marks.** Use orientation arrows ("This Side Up") on all cartons containing liquids, and "Fragile" marks only where contents are genuinely fragile.
+
+4.5 **Old labels.** Remove or completely cover old labels and barcodes before reusing cartons.
+
+## 5. Hazardous Materials Packaging
+
+5.1 Hazmat must be packed in UN-specification packaging appropriate to the material and packing group.
+
+5.2 Each hazmat package carries the proper shipping name, UN number and hazard class label. Lithium battery shipments carry the lithium battery mark or Class 9 label as required by HPL-EHS-004, Section 3.
+
+5.3 Hazmat pallets must be labeled on all four sides.
+
+## 6. Common Rejection Reasons
+
+| Problem | Consequence |
+|---|---|
+| Pallet over {{ f.pallet_rules.max_height_in }} in or over {{ "{:,}".format(f.pallet_rules.max_weight_lb) }} lb | Oversize fee, or refusal if more than 10% over |
+| Missing or unreadable shipping label | Held at dock until relabeled |
+| Damaged or leaking hazmat package | Refused (HPL-EHS-004, Section 8) |
+| Parcel over {{ f.parcel_rules.max_weight_lb }} lb | Converted to LTL at LTL rates |

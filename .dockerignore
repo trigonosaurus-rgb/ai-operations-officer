@@ -1,0 +1,13 @@
+# Build context for backend/Dockerfile is the repo root. Allowlist: send only what the
+# image needs, so secrets (.env), node_modules and local caches never reach the daemon.
+*
+!backend/
+!data/
+
+backend/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+backend/tests/
+backend/evals/
+backend/Dockerfile

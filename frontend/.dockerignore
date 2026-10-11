@@ -1,0 +1,13 @@
+# Installed / generated inside the image, never copied from the host
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Secrets and local files
+.env*
+npm-debug.log*
+Dockerfile
+.dockerignore

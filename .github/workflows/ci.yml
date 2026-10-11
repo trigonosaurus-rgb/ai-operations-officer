@@ -1,0 +1,109 @@
+# Runs on every push and pull request. No secrets needed: the tests never call the LLM
+# (the agent is driven by a scripted mock). The paid evals run on demand, not here.
+name: CI
+
+on:
+  push:
+    branches: [main, v2]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend · ruff + pytest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+
+      # Third-party action: pinned to a commit SHA, as its README recommends (a tag can
+      # be moved to other code; a SHA can't). Caching keyed on uv.lock is on by default.
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+
+      - name: Install dependencies (exactly as locked)
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Formatting
+        run: uv run ruff format --check .
+
+      - name: Tests
+        run: uv run pytest
+
+      - name: OpenAPI contract is committed and up to date
+        run: |
+          uv run python -m scripts.export_openapi
+          git diff --exit-code -- ../frontend/lib/api/openapi.json
+
+  frontend:
+    name: Frontend · lint + typecheck + test + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies (exactly as locked)
+        run: npm ci
+
+      - name: TypeScript API types match openapi.json
+        run: |
+          npm run gen:api
+          git diff --exit-code -- lib/api/schema.d.ts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+  docker:
+    name: Docker · build + smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build images
+        run: docker compose build
+
+      # No .env in CI: the backend starts without an API key (chat disabled), which is
+      # enough to prove the images boot, pass their health checks and talk to each other.
+      - name: Start the stack and wait for health checks
+        run: docker compose up --detach --wait --wait-timeout 120
+
+      - name: Frontend proxies the API to the backend
+        run: |
+          curl --fail --silent --show-error http://localhost:3000/api/health
+          curl --fail --silent --show-error --output /dev/null http://localhost:3000/
+          curl --fail --silent --show-error --output /dev/null http://localhost:3000/data
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop
+        if: always()
+        run: docker compose down
